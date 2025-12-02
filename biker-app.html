@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biker's Companion</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=geometry"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding-bottom: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-bottom: 2px solid #ddd;
+            overflow-x: auto;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--tg-theme-text-color, #000);
+            font-size: 14px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .nav-tab.active {
+            background: var(--tg-theme-bg-color, #fff);
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--tg-theme-secondary-bg-color, #f9f9f9);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--tg-theme-text-color, #000);
+        }
+
+        .input-group input, .input-group textarea, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .log-item {
+            background: var(--tg-theme-bg-color, #fff);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .log-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .log-item-date {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .weather-info {
+            background: linear-gradient(135deg, #56ccf2 0%, #2f80ed 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .weather-temp {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .emergency-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .emergency-card {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .emergency-card h4 {
+            color: #856404;
+            margin-bottom: 5px;
+        }
+
+        .tips-list {
+            list-style: none;
+        }
+
+        .tips-list li {
+            background: var(--tg-theme-bg-color, #fff);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .tips-list li:before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        #rideTimer {
+            font-size: 36px;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+        }
+
+        .ride-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .ride-controls button {
+            flex: 1;
+        }
+
+        .media-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .media-preview-item {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f0f0f0;
+        }
+
+        .media-preview-item img,
+        .media-preview-item video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .media-preview-item .remove-media {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            z-index: 10;
+        }
+
+        .media-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .media-gallery-item {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            background: #f0f0f0;
+        }
+
+        .media-gallery-item img,
+        .media-gallery-item video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .media-gallery-item .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+
+        .modal-content img,
+        .modal-content video {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .file-size-warning {
+            color: #ff9800;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .share-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: transform 0.2s;
+        }
+
+        .share-btn:active {
+            transform: scale(0.95);
+        }
+
+        .share-btn-telegram {
+            background: #0088cc;
+            color: white;
+        }
+
+        .share-btn-general {
+            background: #34a853;
+            color: white;
+        }
+
+        .share-btn-stats {
+            background: #667eea;
+            color: white;
+        }
+
+        .share-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .share-modal.active {
+            display: flex;
+        }
+
+        .share-modal-content {
+            background: var(--tg-theme-bg-color, #fff);
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .share-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .share-modal-header h3 {
+            color: #667eea;
+            margin: 0;
+        }
+
+        .share-option {
+            background: var(--tg-theme-secondary-bg-color, #f9f9f9);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.2s;
+        }
+
+        .share-option:active {
+            transform: scale(0.98);
+        }
+
+        .share-option-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .share-option-telegram { background: #0088cc; }
+        .share-option-whatsapp { background: #25D366; }
+        .share-option-facebook { background: #1877F2; }
+        .share-option-twitter { background: #1DA1F2; }
+        .share-option-copy { background: #6c757d; }
+        .share-option-native { background: #667eea; }
+
+        .share-option-text {
+            flex: 1;
+        }
+
+        .share-option-text strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .share-option-text small {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .share-preview {
+            background: var(--tg-theme-secondary-bg-color, #f9f9f9);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .share-preview pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        #mapContainer {
+            background: #e0e0e0;
+            position: relative;
+        }
+
+        .poi-item {
+            background: var(--tg-theme-bg-color, #fff);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #28a745;
+        }
+
+        .poi-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .poi-category {
+            font-size: 11px;
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .route-item {
+            background: var(--tg-theme-bg-color, #fff);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .route-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .map-info-window {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 5px;
+        }
+
+        .map-info-window h4 {
+            margin: 0 0 5px 0;
+            color: #667eea;
+        }
+
+        .map-info-window p {
+            margin: 3px 0;
+            font-size: 13px;
+        }
+
+        .tracking-active {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .location-error {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 12px;
+            border-radius: 8px;
+            color: #856404;
+            margin-top: 10px;
+        }
+
+        .map-stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .map-stat {
+            flex: 1;
+            background: var(--tg-theme-secondary-bg-color, #f9f9f9);
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .map-stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏍️ Biker's Companion</h1>
+        <p>Your riding assistant</p>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+        <button class="nav-tab" onclick="switchTab('ride')">🚴 Ride</button>
+        <button class="nav-tab" onclick="switchTab('map')">🗺️ Map</button>
+        <button class="nav-tab" onclick="switchTab('maintenance')">🔧 Maintenance</button>
+        <button class="nav-tab" onclick="switchTab('safety')">🚨 Safety</button>
+        <button class="nav-tab" onclick="switchTab('tips')">💡 Tips</button>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboard" class="tab-content active">
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalRides">0</div>
+                <div class="stat-label">Total Rides</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalDistance">0</div>
+                <div class="stat-label">KM Traveled</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalTime">0</div>
+                <div class="stat-label">Hours Riding</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="maintenanceCount">0</div>
+                <div class="stat-label">Maintenance Logs</div>
+            </div>
+        </div>
+
+        <button class="btn share-btn-stats" onclick="shareStats()">
+            📊 Share My Stats
+        </button>
+
+        <div class="card">
+            <h3>📍 Quick Weather Check</h3>
+            <div class="input-group">
+                <input type="text" id="weatherCity" placeholder="Enter your city">
+            </div>
+            <button class="btn" onclick="checkWeather()">Check Weather</button>
+            <div id="weatherResult" style="margin-top: 15px;"></div>
+        </div>
+
+        <div class="card">
+            <h3>📝 Recent Activity</h3>
+            <div id="recentActivity">
+                <p style="color: #666; text-align: center;">No recent activity</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Tab -->
+    <div id="map" class="tab-content">
+        <div class="card">
+            <h3>🗺️ Interactive Map</h3>
+            <div id="mapContainer" style="width: 100%; height: 400px; border-radius: 8px; overflow: hidden;"></div>
+            <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="getCurrentLocation()" style="flex: 1; min-width: 120px;">📍 My Location</button>
+                <button class="btn btn-secondary" onclick="toggleTracking()" id="trackingBtn" style="flex: 1; min-width: 120px;">
+                    🎯 Start Tracking
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📍 Add Point of Interest</h3>
+            <div class="input-group">
+                <label>POI Name</label>
+                <input type="text" id="poiName" placeholder="e.g., Scenic Viewpoint, Gas Station">
+            </div>
+            <div class="input-group">
+                <label>Category</label>
+                <select id="poiCategory">
+                    <option>Scenic Spot</option>
+                    <option>Restaurant/Café</option>
+                    <option>Gas Station</option>
+                    <option>Parking</option>
+                    <option>Repair Shop</option>
+                    <option>Rest Area</option>
+                    <option>Meetup Point</option>
+                    <option>Dangerous Spot</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Notes</label>
+                <textarea id="poiNotes" placeholder="Additional details..."></textarea>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn" onclick="addPOIAtCurrentLocation()" style="flex: 1;">
+                    Add at Current Location
+                </button>
+                <button class="btn btn-secondary" onclick="addPOIByClick()" style="flex: 1;">
+                    Add by Map Click
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📌 Saved Points of Interest</h3>
+            <div id="poiList"></div>
+        </div>
+
+        <div class="card">
+            <h3>🗺️ Ride Routes</h3>
+            <div id="routesList"></div>
+        </div>
+
+        <div class="card">
+            <h3>🎛️ Map Controls</h3>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="togglePOIVisibility()" style="flex: 1;">
+                    👁️ Toggle POIs
+                </button>
+                <button class="btn btn-secondary" onclick="toggleRoutesVisibility()" style="flex: 1;">
+                    🛣️ Toggle Routes
+                </button>
+            </div>
+            <div style="margin-top: 10px;">
+                <label style="display: block; margin-bottom: 5px;">Map Type:</label>
+                <select id="mapTypeSelect" onchange="changeMapType()" style="width: 100%; padding: 8px; border-radius: 6px;">
+                    <option value="roadmap">Roadmap</option>
+                    <option value="satellite">Satellite</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="terrain">Terrain</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ride Tab -->
+    <div id="ride" class="tab-content">
+        <div class="card">
+            <h3>🚴 Track Your Ride</h3>
+            <div id="rideTimer">00:00:00</div>
+            <div class="ride-controls">
+                <button class="btn" id="startRideBtn" onclick="startRide()">Start Ride</button>
+                <button class="btn btn-danger" id="stopRideBtn" onclick="stopRide()" style="display: none;">Stop Ride</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📊 Current Ride Stats</h3>
+            <div class="input-group">
+                <label>Distance (km)</label>
+                <input type="number" id="rideDistance" placeholder="0" step="0.1">
+            </div>
+            <div class="input-group">
+                <label>Notes</label>
+                <textarea id="rideNotes" placeholder="Route, conditions, highlights..."></textarea>
+            </div>
+            <div class="input-group">
+                <label>📸 Add Photos/Videos</label>
+                <input type="file" id="rideMedia" accept="image/*,video/*" multiple style="margin-bottom: 10px;">
+                <button class="btn btn-secondary" onclick="document.getElementById('rideMedia').click()">Choose Files</button>
+                <div id="rideMediaPreview" style="margin-top: 10px;"></div>
+            </div>
+            <div id="routeDataInfo" style="display: none; background: #d4edda; padding: 10px; border-radius: 6px; margin-bottom: 10px; color: #155724;">
+                <small>✓ Route data will be saved with this ride</small>
+            </div>
+            <button class="btn" onclick="saveRide()">Save Ride</button>
+        </div>
+
+        <div class="card">
+            <h3>📜 Ride History</h3>
+            <div id="rideHistory"></div>
+        </div>
+    </div>
+
+    <!-- Maintenance Tab -->
+    <div id="maintenance" class="tab-content">
+        <div class="card">
+            <h3>🔧 Log Maintenance</h3>
+            <div class="input-group">
+                <label>Type</label>
+                <select id="maintenanceType">
+                    <option>Oil Change</option>
+                    <option>Chain Cleaning</option>
+                    <option>Tire Check</option>
+                    <option>Brake Inspection</option>
+                    <option>General Service</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Odometer (km)</label>
+                <input type="number" id="maintenanceOdo" placeholder="Current odometer reading">
+            </div>
+            <div class="input-group">
+                <label>Notes</label>
+                <textarea id="maintenanceNotes" placeholder="What was done, parts replaced, cost..."></textarea>
+            </div>
+            <div class="input-group">
+                <label>📸 Add Photos/Videos</label>
+                <input type="file" id="maintenanceMedia" accept="image/*,video/*" multiple style="margin-bottom: 10px;">
+                <button class="btn btn-secondary" onclick="document.getElementById('maintenanceMedia').click()">Choose Files</button>
+                <div id="maintenanceMediaPreview" style="margin-top: 10px;"></div>
+            </div>
+            <button class="btn" onclick="saveMaintenance()">Save Maintenance Log</button>
+        </div>
+
+        <div class="card">
+            <h3>📜 Maintenance History</h3>
+            <div id="maintenanceHistory"></div>
+        </div>
+
+        <div class="card">
+            <h3>⏰ Maintenance Reminders</h3>
+            <ul class="tips-list">
+                <li>Change oil every 3,000-5,000 km</li>
+                <li>Check tire pressure weekly</li>
+                <li>Clean and lube chain every 500 km</li>
+                <li>Inspect brakes monthly</li>
+                <li>Check coolant levels regularly</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Safety Tab -->
+    <div id="safety" class="tab-content">
+        <div class="card">
+            <h3>🚨 Emergency Contacts</h3>
+            <div class="input-group">
+                <label>Emergency Contact Name</label>
+                <input type="text" id="emergencyName" placeholder="e.g., John Doe">
+            </div>
+            <div class="input-group">
+                <label>Phone Number</label>
+                <input type="tel" id="emergencyPhone" placeholder="e.g., +1234567890">
+            </div>
+            <button class="btn" onclick="saveEmergencyContact()">Save Contact</button>
+        </div>
+
+        <div class="card">
+            <h3>📞 Saved Emergency Contacts</h3>
+            <div id="emergencyContacts"></div>
+        </div>
+
+        <div class="card">
+            <h3>🆘 Quick Access Numbers</h3>
+            <div class="emergency-grid">
+                <div class="emergency-card">
+                    <h4>Emergency Services</h4>
+                    <p><strong>Call: 911 / 112</strong></p>
+                </div>
+                <div class="emergency-card">
+                    <h4>Roadside Assistance</h4>
+                    <p>Keep your insurance number handy</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🛡️ Safety Checklist</h3>
+            <ul class="tips-list">
+                <li>Always wear a DOT-approved helmet</li>
+                <li>Wear protective gear (jacket, gloves, boots)</li>
+                <li>Check lights and signals before riding</li>
+                <li>Maintain safe following distance</li>
+                <li>Stay visible - use high-viz gear</li>
+                <li>Never ride under influence</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tips Tab -->
+    <div id="tips" class="tab-content">
+        <div class="card">
+            <h3>💡 Riding Tips</h3>
+            <ul class="tips-list">
+                <li><strong>Cornering:</strong> Look through the turn, not at the ground</li>
+                <li><strong>Braking:</strong> Use both brakes progressively</li>
+                <li><strong>Position:</strong> Keep your body relaxed and knees gripping tank</li>
+                <li><strong>Vision:</strong> Scan far ahead, not just in front of you</li>
+                <li><strong>Weather:</strong> Reduce speed by 25% in rain</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>🌦️ Weather Riding Tips</h3>
+            <ul class="tips-list">
+                <li><strong>Rain:</strong> Painted lines and metal surfaces are slippery</li>
+                <li><strong>Wind:</strong> Lean into crosswinds, grip tank firmly</li>
+                <li><strong>Cold:</strong> Layer up, hypothermia affects reaction time</li>
+                <li><strong>Hot:</strong> Stay hydrated, take breaks often</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>🔧 Pre-Ride Check (T-CLOCS)</h3>
+            <ul class="tips-list">
+                <li><strong>T</strong> - Tires & Wheels</li>
+                <li><strong>C</strong> - Controls (levers, pedals, cables)</li>
+                <li><strong>L</strong> - Lights & Electrics</li>
+                <li><strong>O</strong> - Oil & Fluids</li>
+                <li><strong>C</strong> - Chassis & Chain</li>
+                <li><strong>S</strong> - Stands & Suspension</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Media Viewer Modal -->
+    <div id="mediaModal" class="modal" onclick="closeModal()">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <img id="modalImage" style="display: none;">
+            <video id="modalVideo" controls style="display: none;"></video>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="shareModal" class="share-modal" onclick="closeShareModal()">
+        <div class="share-modal-content" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <h3>Share</h3>
+                <button class="delete-btn" onclick="closeShareModal()">×</button>
+            </div>
+            
+            <div class="share-preview" id="sharePreview"></div>
+
+            <div id="shareOptions">
+                <!-- Share options will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Telegram WebApp
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.MainButton.hide();
+
+        // Data storage
+        let rideTimer = null;
+        let rideStartTime = null;
+        let rideElapsedSeconds = 0;
+        let currentRideMedia = [];
+        let currentMaintenanceMedia = [];
+
+        // Google Maps variables
+        let map = null;
+        let userMarker = null;
+        let trackingActive = false;
+        let watchId = null;
+        let routePath = [];
+        let routePolyline = null;
+        let poiMarkers = [];
+        let routePolylines = [];
+        let poisVisible = true;
+        let routesVisible = true;
+        let clickToAddPOI = false;
+        let tempMarker = null;
+
+        // File upload event listeners
+        document.getElementById('rideMedia').addEventListener('change', function(e) {
+            handleMediaUpload(e.files, 'ride');
+        });
+
+        document.getElementById('maintenanceMedia').addEventListener('change', function(e) {
+            handleMediaUpload(e.files, 'maintenance');
+        });
+
+        // === GOOGLE MAPS FUNCTIONS ===
+
+        function initializeMap() {
+            const defaultCenter = { lat: 51.5074, lng: -0.1278 }; // London default
+            
+            map = new google.maps.Map(document.getElementById('mapContainer'), {
+                center: defaultCenter,
+                zoom: 12,
+                mapTypeId: 'roadmap',
+                zoomControl: true,
+                mapTypeControl: false,
+                scaleControl: true,
+                streetViewControl: false,
+                rotateControl: false,
+                fullscreenControl: true
+            });
+
+            // Try to get user's location
+            getCurrentLocation();
+
+            // Load saved POIs and routes
+            loadPOIsOnMap();
+            loadRoutesOnMap();
+
+            // Add click listener for POI placement
+            map.addListener('click', function(e) {
+                if (clickToAddPOI) {
+                    placeTempMarker(e.latLng);
+                }
+            });
+        }
+
+        function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                tg.showAlert('Geolocation is not supported by your browser');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    map.setCenter(pos);
+                    map.setZoom(15);
+
+                    // Add or update user marker
+                    if (userMarker) {
+                        userMarker.setPosition(pos);
+                    } else {
+                        userMarker = new google.maps.Marker({
+                            position: pos,
+                            map: map,
+                            title: 'Your Location',
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 8,
+                                fillColor: '#4285F4',
+                                fillOpacity: 1,
+                                strokeColor: '#ffffff',
+                                strokeWeight: 2
+                            }
+                        });
+                    }
+                },
+                function(error) {
+                    console.error('Geolocation error:', error);
+                    let message = 'Unable to get your location';
+                    if (error.code === 1) {
+                        message = 'Location permission denied. Please enable location access.';
+                    } else if (error.code === 2) {
+                        message = 'Location unavailable. Check your device settings.';
+                    } else if (error.code === 3) {
+                        message = 'Location request timed out.';
+                    }
+                    tg.showAlert(message);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function toggleTracking() {
+            if (trackingActive) {
+                stopTracking();
+            } else {
+                startTracking();
+            }
+        }
+
+        function startTracking() {
+            if (!navigator.geolocation) {
+                tg.showAlert('Geolocation is not supported');
+                return;
+            }
+
+            trackingActive = true;
+            routePath = [];
+            
+            const trackingBtn = document.getElementById('trackingBtn');
+            trackingBtn.textContent = '⏹️ Stop Tracking';
+            trackingBtn.classList.add('tracking-active');
+
+            // Clear existing route polyline
+            if (routePolyline) {
+                routePolyline.setMap(null);
+            }
+
+            // Create new polyline
+            routePolyline = new google.maps.Polyline({
+                path: routePath,
+                geodesic: true,
+                strokeColor: '#667eea',
+                strokeOpacity: 1.0,
+                strokeWeight: 4
+            });
+            routePolyline.setMap(map);
+
+            // Start watching position
+            watchId = navigator.geolocation.watchPosition(
+                function(position) {
+                    const pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    // Add to route path
+                    routePath.push(pos);
+                    routePolyline.setPath(routePath);
+
+                    // Update user marker
+                    if (userMarker) {
+                        userMarker.setPosition(pos);
+                    }
+
+                    // Center map on user
+                    map.panTo(pos);
+                },
+                function(error) {
+                    console.error('Tracking error:', error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 5000,
+                    timeout: 10000
+                }
+            );
+
+            tg.showAlert('Route tracking started! 🗺️');
+        }
+
+        function stopTracking() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+
+            trackingActive = false;
+            const trackingBtn = document.getElementById('trackingBtn');
+            trackingBtn.textContent = '🎯 Start Tracking';
+            trackingBtn.classList.remove('tracking-active');
+
+            // Save route if it has points
+            if (routePath.length > 1) {
+                const distance = calculateRouteDistance(routePath);
+                tg.showAlert(`Route ready! Distance: ${distance.toFixed(2)} km. Go to Ride tab to save with your ride, or it will auto-save.`);
+                
+                // Show indicator in ride tab
+                const routeInfo = document.getElementById('routeDataInfo');
+                if (routeInfo) {
+                    routeInfo.style.display = 'block';
+                }
+            } else {
+                tg.showAlert('Route too short to save (need at least 2 points)');
+                if (routePolyline) {
+                    routePolyline.setMap(null);
+                    routePolyline = null;
+                }
+                routePath = [];
+            }
+        }
+
+        function saveRoute() {
+            const distance = calculateRouteDistance(routePath);
+            
+            const route = {
+                date: new Date().toISOString(),
+                path: routePath,
+                distance: distance,
+                points: routePath.length
+            };
+
+            const routes = JSON.parse(localStorage.getItem('routes') || '[]');
+            routes.push(route);
+            
+            try {
+                localStorage.setItem('routes', JSON.stringify(routes));
+                tg.showAlert(`Route saved! Distance: ${distance.toFixed(2)} km`);
+                loadRoutesOnMap();
+                displayRoutes();
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    tg.showAlert('Storage limit exceeded. Delete old routes.');
+                }
+            }
+
+            routePath = [];
+            if (routePolyline) {
+                routePolyline.setMap(null);
+                routePolyline = null;
+            }
+        }
+
+        function calculateRouteDistance(path) {
+            if (path.length < 2) return 0;
+            
+            let distance = 0;
+            for (let i = 0; i < path.length - 1; i++) {
+                distance += google.maps.geometry.spherical.computeDistanceBetween(
+                    new google.maps.LatLng(path[i].lat, path[i].lng),
+                    new google.maps.LatLng(path[i + 1].lat, path[i + 1].lng)
+                );
+            }
+            return distance / 1000; // Convert to km
+        }
+
+        // POI Functions
+        function addPOIAtCurrentLocation() {
+            const name = document.getElementById('poiName').value;
+            const category = document.getElementById('poiCategory').value;
+            const notes = document.getElementById('poiNotes').value;
+
+            if (!name) {
+                tg.showAlert('Please enter a POI name');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const poi = {
+                        id: Date.now(),
+                        name: name,
+                        category: category,
+                        notes: notes,
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        date: new Date().toISOString()
+                    };
+
+                    savePOI(poi);
+                },
+                function(error) {
+                    tg.showAlert('Unable to get your location');
+                }
+            );
+        }
+
+        function addPOIByClick() {
+            clickToAddPOI = !clickToAddPOI;
+            
+            if (clickToAddPOI) {
+                tg.showAlert('Click on the map to place POI');
+                document.body.style.cursor = 'crosshair';
+            } else {
+                document.body.style.cursor = 'default';
+                if (tempMarker) {
+                    tempMarker.setMap(null);
+                    tempMarker = null;
+                }
+            }
+        }
+
+        function placeTempMarker(location) {
+            if (tempMarker) {
+                tempMarker.setMap(null);
+            }
+
+            tempMarker = new google.maps.Marker({
+                position: location,
+                map: map,
+                animation: google.maps.Animation.DROP
+            });
+
+            // Confirm and save
+            const name = document.getElementById('poiName').value;
+            const category = document.getElementById('poiCategory').value;
+            const notes = document.getElementById('poiNotes').value;
+
+            if (!name) {
+                tg.showAlert('Please enter a POI name first');
+                tempMarker.setMap(null);
+                tempMarker = null;
+                return;
+            }
+
+            const poi = {
+                id: Date.now(),
+                name: name,
+                category: category,
+                notes: notes,
+                lat: location.lat(),
+                lng: location.lng(),
+                date: new Date().toISOString()
+            };
+
+            savePOI(poi);
+            
+            tempMarker.setMap(null);
+            tempMarker = null;
+            clickToAddPOI = false;
+            document.body.style.cursor = 'default';
+        }
+
+        function savePOI(poi) {
+            const pois = JSON.parse(localStorage.getItem('pois') || '[]');
+            pois.push(poi);
+            
+            try {
+                localStorage.setItem('pois', JSON.stringify(pois));
+                
+                // Clear form
+                document.getElementById('poiName').value = '';
+                document.getElementById('poiNotes').value = '';
+                
+                // Reload POIs
+                loadPOIsOnMap();
+                displayPOIs();
+                
+                tg.showAlert('POI added! 📍');
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    tg.showAlert('Storage limit exceeded');
+                }
+            }
+        }
+
+        function loadPOIsOnMap() {
+            // Clear existing markers
+            poiMarkers.forEach(marker => marker.setMap(null));
+            poiMarkers = [];
+
+            const pois = JSON.parse(localStorage.getItem('pois') || '[]');
+            
+            pois.forEach(poi => {
+                const marker = new google.maps.Marker({
+                    position: { lat: poi.lat, lng: poi.lng },
+                    map: poisVisible ? map : null,
+                    title: poi.name,
+                    icon: getPOIIcon(poi.category)
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div class="map-info-window">
+                            <h4>${poi.name}</h4>
+                            <p><strong>${poi.category}</strong></p>
+                            ${poi.notes ? `<p>${poi.notes}</p>` : ''}
+                            <p><small>${new Date(poi.date).toLocaleDateString()}</small></p>
+                        </div>
+                    `
+                });
+
+                marker.addListener('click', function() {
+                    infoWindow.open(map, marker);
+                });
+
+                poiMarkers.push({ marker: marker, poi: poi });
+            });
+        }
+
+        function getPOIIcon(category) {
+            const colors = {
+                'Scenic Spot': '#28a745',
+                'Restaurant/Café': '#fd7e14',
+                'Gas Station': '#ffc107',
+                'Parking': '#6c757d',
+                'Repair Shop': '#dc3545',
+                'Rest Area': '#17a2b8',
+                'Meetup Point': '#667eea',
+                'Dangerous Spot': '#e74c3c',
+                'Other': '#6c757d'
+            };
+
+            return {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 7,
+                fillColor: colors[category] || '#6c757d',
+                fillOpacity: 1,
+                strokeColor: '#ffffff',
+                strokeWeight: 2
+            };
+        }
+
+        function loadRoutesOnMap() {
+            // Clear existing polylines
+            routePolylines.forEach(polyline => polyline.setMap(null));
+            routePolylines = [];
+
+            const routes = JSON.parse(localStorage.getItem('routes') || '[]');
+            
+            routes.forEach((route, index) => {
+                const polyline = new google.maps.Polyline({
+                    path: route.path,
+                    geodesic: true,
+                    strokeColor: '#667eea',
+                    strokeOpacity: 0.7,
+                    strokeWeight: 3,
+                    map: routesVisible ? map : null
+                });
+
+                polyline.addListener('click', function(e) {
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div class="map-info-window">
+                                <h4>Route</h4>
+                                <p>Distance: ${route.distance.toFixed(2)} km</p>
+                                <p>Points: ${route.points}</p>
+                                <p><small>${new Date(route.date).toLocaleString()}</small></p>
+                            </div>
+                        `,
+                        position: e.latLng
+                    });
+                    infoWindow.open(map);
+                });
+
+                routePolylines.push(polyline);
+            });
+        }
+
+        function displayPOIs() {
+            const pois = JSON.parse(localStorage.getItem('pois') || '[]');
+            const container = document.getElementById('poiList');
+
+            if (pois.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center;">No POIs saved yet</p>';
+                return;
+            }
+
+            container.innerHTML = pois.slice().reverse().map((poi, index) => {
+                const actualIndex = pois.length - 1 - index;
+                return `
+                    <div class="poi-item">
+                        <div class="poi-item-header">
+                            <strong>📍 ${poi.name}</strong>
+                            <button class="delete-btn" onclick="deletePOI(${actualIndex})">Delete</button>
+                        </div>
+                        <span class="poi-category">${poi.category}</span>
+                        ${poi.notes ? `<div style="margin-top: 5px; font-size: 13px;">${poi.notes}</div>` : ''}
+                        <div style="margin-top: 5px; font-size: 12px; color: #666;">
+                            ${new Date(poi.date).toLocaleDateString()} • 
+                            <a href="#" onclick="focusOnPOI(${poi.lat}, ${poi.lng}); return false;">Show on map</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function displayRoutes() {
+            const routes = JSON.parse(localStorage.getItem('routes') || '[]');
+            const container = document.getElementById('routesList');
+
+            if (routes.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center;">No routes saved yet</p>';
+                return;
+            }
+
+            container.innerHTML = routes.slice().reverse().map((route, index) => {
+                const actualIndex = routes.length - 1 - index;
+                return `
+                    <div class="route-item">
+                        <div class="route-item-header">
+                            <strong>🛣️ ${route.distance.toFixed(2)} km</strong>
+                            <button class="delete-btn" onclick="deleteRoute(${actualIndex})">Delete</button>
+                        </div>
+                        <div>Points: ${route.points}</div>
+                        <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                            ${new Date(route.date).toLocaleString()} • 
+                            <a href="#" onclick="focusOnRoute(${actualIndex}); return false;">Show on map</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function deletePOI(index) {
+            if (confirm('Delete this POI?')) {
+                const pois = JSON.parse(localStorage.getItem('pois') || '[]');
+                pois.splice(index, 1);
+                localStorage.setItem('pois', JSON.stringify(pois));
+                loadPOIsOnMap();
+                displayPOIs();
+            }
+        }
+
+        function deleteRoute(index) {
+            if (confirm('Delete this route?')) {
+                const routes = JSON.parse(localStorage.getItem('routes') || '[]');
+                routes.splice(index, 1);
+                localStorage.setItem('routes', JSON.stringify(routes));
+                loadRoutesOnMap();
+                displayRoutes();
+            }
+        }
+
+        function focusOnPOI(lat, lng) {
+            switchTab('map');
+            document.querySelector('.nav-tab[onclick*="map"]').click();
+            map.setCenter({ lat: lat, lng: lng });
+            map.setZoom(16);
+        }
+
+        function focusOnRoute(index) {
+            switchTab('map');
+            document.querySelector('.nav-tab[onclick*="map"]').click();
+            
+            const routes = JSON.parse(localStorage.getItem('routes') || '[]');
+            const route = routes[index];
+            
+            if (route && route.path.length > 0) {
+                const bounds = new google.maps.LatLngBounds();
+                route.path.forEach(point => {
+                    bounds.extend(new google.maps.LatLng(point.lat, point.lng));
+                });
+                map.fitBounds(bounds);
+            }
+        }
+
+        function togglePOIVisibility() {
+            poisVisible = !poisVisible;
+            poiMarkers.forEach(item => {
+                item.marker.setMap(poisVisible ? map : null);
+            });
+            tg.showAlert(poisVisible ? 'POIs shown' : 'POIs hidden');
+        }
+
+        function toggleRoutesVisibility() {
+            routesVisible = !routesVisible;
+            routePolylines.forEach(polyline => {
+                polyline.setMap(routesVisible ? map : null);
+            });
+            tg.showAlert(routesVisible ? 'Routes shown' : 'Routes hidden');
+        }
+
+        function changeMapType() {
+            const mapType = document.getElementById('mapTypeSelect').value;
+            map.setMapTypeId(mapType);
+        }
+
+        // Media handling functions
+        async function handleMediaUpload(files, type) {
+            const maxSize = 5 * 1024 * 1024; // 5MB limit per file
+            const previewDiv = type === 'ride' ? 
+                document.getElementById('rideMediaPreview') : 
+                document.getElementById('maintenanceMediaPreview');
+
+            for (let file of files) {
+                if (file.size > maxSize) {
+                    tg.showAlert(`File ${file.name} is too large. Maximum size is 5MB.`);
+                    continue;
+                }
+
+                try {
+                    const mediaData = await processMediaFile(file);
+                    
+                    if (type === 'ride') {
+                        currentRideMedia.push(mediaData);
+                    } else {
+                        currentMaintenanceMedia.push(mediaData);
+                    }
+
+                    updateMediaPreview(type);
+                } catch (error) {
+                    console.error('Error processing file:', error);
+                    tg.showAlert(`Error processing ${file.name}`);
+                }
+            }
+        }
+
+        async function processMediaFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = async function(e) {
+                    const mediaData = {
+                        type: file.type.startsWith('image/') ? 'image' : 'video',
+                        name: file.name,
+                        data: e.target.result,
+                        timestamp: Date.now()
+                    };
+
+                    // Compress images
+                    if (mediaData.type === 'image') {
+                        try {
+                            mediaData.data = await compressImage(e.target.result);
+                        } catch (error) {
+                            console.error('Compression error:', error);
+                        }
+                    }
+
+                    resolve(mediaData);
+                };
+                
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function compressImage(dataUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // Resize if too large
+                    const maxDimension = 1200;
+                    if (width > maxDimension || height > maxDimension) {
+                        if (width > height) {
+                            height = (height / width) * maxDimension;
+                            width = maxDimension;
+                        } else {
+                            width = (width / height) * maxDimension;
+                            height = maxDimension;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.src = dataUrl;
+            });
+        }
+
+        function updateMediaPreview(type) {
+            const media = type === 'ride' ? currentRideMedia : currentMaintenanceMedia;
+            const previewDiv = type === 'ride' ? 
+                document.getElementById('rideMediaPreview') : 
+                document.getElementById('maintenanceMediaPreview');
+
+            if (media.length === 0) {
+                previewDiv.innerHTML = '';
+                return;
+            }
+
+            previewDiv.innerHTML = `
+                <div class="media-preview">
+                    ${media.map((item, index) => `
+                        <div class="media-preview-item">
+                            ${item.type === 'image' ? 
+                                `<img src="${item.data}" alt="Preview">` :
+                                `<video src="${item.data}"></video>
+                                <div class="play-icon">▶</div>`
+                            }
+                            <button class="remove-media" onclick="removeMedia(${index}, '${type}')">×</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <p class="file-size-warning">${media.length} file(s) selected</p>
+            `;
+        }
+
+        function removeMedia(index, type) {
+            if (type === 'ride') {
+                currentRideMedia.splice(index, 1);
+            } else {
+                currentMaintenanceMedia.splice(index, 1);
+            }
+            updateMediaPreview(type);
+        }
+
+        function openMediaModal(mediaData) {
+            const modal = document.getElementById('mediaModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalVideo = document.getElementById('modalVideo');
+
+            if (mediaData.type === 'image') {
+                modalImage.src = mediaData.data;
+                modalImage.style.display = 'block';
+                modalVideo.style.display = 'none';
+            } else {
+                modalVideo.src = mediaData.data;
+                modalVideo.style.display = 'block';
+                modalImage.style.display = 'none';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('mediaModal');
+            const modalVideo = document.getElementById('modalVideo');
+            modal.classList.remove('active');
+            modalVideo.pause();
+        }
+
+        function createMediaGallery(media) {
+            if (!media || media.length === 0) return '';
+
+            return `
+                <div class="media-gallery">
+                    ${media.map((item, index) => `
+                        <div class="media-gallery-item" onclick='openMediaModal(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                            ${item.type === 'image' ? 
+                                `<img src="${item.data}" alt="Media">` :
+                                `<video src="${item.data}"></video>
+                                <div class="play-icon">▶</div>`
+                            }
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            const rides = JSON.parse(localStorage.getItem('rides') || '[]');
+            const maintenance = JSON.parse(localStorage.getItem('maintenance') || '[]');
+            const emergencyContacts = JSON.parse(localStorage.getItem('emergencyContacts') || '[]');
+
+            // Update stats
+            document.getElementById('totalRides').textContent = rides.length;
+            document.getElementById('totalDistance').textContent = 
+                rides.reduce((sum, r) => sum + parseFloat(r.distance || 0), 0).toFixed(1);
+            document.getElementById('totalTime').textContent = 
+                (rides.reduce((sum, r) => sum + parseInt(r.duration || 0), 0) / 3600).toFixed(1);
+            document.getElementById('maintenanceCount').textContent = maintenance.length;
+
+            // Display recent activity
+            displayRecentActivity(rides, maintenance);
+            displayRideHistory(rides);
+            displayMaintenanceHistory(maintenance);
+            displayEmergencyContacts(emergencyContacts);
+            displayPOIs();
+            displayRoutes();
+        }
+
+        function displayRecentActivity(rides, maintenance) {
+            const container = document.getElementById('recentActivity');
+            const recent = [...rides.slice(-3).map(r => ({...r, type: 'ride'})), 
+                           ...maintenance.slice(-3).map(m => ({...m, type: 'maintenance'}))]
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 5);
+
+            if (recent.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center;">No recent activity</p>';
+                return;
+            }
+
+            container.innerHTML = recent.map(item => {
+                const icon = item.type === 'ride' ? '🚴' : '🔧';
+                const label = item.type === 'ride' ? 'Ride' : item.maintenanceType;
+                return `
+                    <div class="log-item">
+                        <div class="log-item-header">
+                            <strong>${icon} ${label}</strong>
+                            <span class="log-item-date">${new Date(item.date).toLocaleDateString()}</span>
+                        </div>
+                        ${item.type === 'ride' ? `${item.distance || 0} km` : item.odometer ? `${item.odometer} km` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Initialize map when map tab is opened for the first time
+            if (tabName === 'map' && !map) {
+                // Small delay to ensure container is rendered
+                setTimeout(initializeMap, 100);
+            }
+        }
+
+        // Ride tracking
+        function startRide() {
+            rideStartTime = Date.now();
+            rideElapsedSeconds = 0;
+            document.getElementById('startRideBtn').style.display = 'none';
+            document.getElementById('stopRideBtn').style.display = 'block';
+            
+            rideTimer = setInterval(() => {
+                rideElapsedSeconds = Math.floor((Date.now() - rideStartTime) / 1000);
+                updateTimerDisplay();
+            }, 1000);
+
+            tg.showAlert('Ride started! Stay safe! 🏍️');
+        }
+
+        function stopRide() {
+            if (rideTimer) {
+                clearInterval(rideTimer);
+                rideTimer = null;
+            }
+            document.getElementById('startRideBtn').style.display = 'block';
+            document.getElementById('stopRideBtn').style.display = 'none';
+            
+            tg.showAlert('Ride stopped! Don\'t forget to log your distance.');
+        }
+
+        function updateTimerDisplay() {
+            const hours = Math.floor(rideElapsedSeconds / 3600);
+            const minutes = Math.floor((rideElapsedSeconds % 3600) / 60);
+            const seconds = rideElapsedSeconds % 60;
+            
+            document.getElementById('rideTimer').textContent = 
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function saveRide() {
+            const distance = document.getElementById('rideDistance').value;
+            const notes = document.getElementById('rideNotes').value;
+
+            if (!distance || distance <= 0) {
+                tg.showAlert('Please enter a valid distance');
+                return;
+            }
+
+            const ride = {
+                date: new Date().toISOString(),
+                distance: parseFloat(distance),
+                duration: rideElapsedSeconds,
+                notes: notes,
+                media: currentRideMedia,
+                hasRoute: routePath.length > 1,
+                routePoints: routePath.length
+            };
+
+            const rides = JSON.parse(localStorage.getItem('rides') || '[]');
+            rides.push(ride);
+            
+            try {
+                localStorage.setItem('rides', JSON.stringify(rides));
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    tg.showAlert('Storage limit exceeded. Try removing some old photos/videos.');
+                    return;
+                }
+            }
+
+            // Save route if available
+            if (routePath.length > 1) {
+                const route = {
+                    date: new Date().toISOString(),
+                    path: routePath,
+                    distance: parseFloat(distance),
+                    points: routePath.length,
+                    linkedToRide: true
+                };
+
+                const routes = JSON.parse(localStorage.getItem('routes') || '[]');
+                routes.push(route);
+                localStorage.setItem('routes', JSON.stringify(routes));
+                
+                // Clear route
+                if (routePolyline) {
+                    routePolyline.setMap(null);
+                    routePolyline = null;
+                }
+                routePath = [];
+                document.getElementById('routeDataInfo').style.display = 'none';
+            }
+
+            // Reset form
+            document.getElementById('rideDistance').value = '';
+            document.getElementById('rideNotes').value = '';
+            document.getElementById('rideMedia').value = '';
+            currentRideMedia = [];
+            document.getElementById('rideMediaPreview').innerHTML = '';
+            rideElapsedSeconds = 0;
+            updateTimerDisplay();
+
+            loadData();
+            tg.showAlert('Ride saved successfully! 🎉');
+        }
+
+        function displayRideHistory(rides) {
+            const container = document.getElementById('rideHistory');
+            if (rides.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center;">No rides logged yet</p>';
+                return;
+            }
+
+            container.innerHTML = rides.slice().reverse().map((ride, index) => {
+                const actualIndex = rides.length - 1 - index;
+                const hours = Math.floor(ride.duration / 3600);
+                const minutes = Math.floor((ride.duration % 3600) / 60);
+                return `
+                    <div class="log-item">
+                        <div class="log-item-header">
+                            <strong>🚴 ${ride.distance} km</strong>
+                            <button class="delete-btn" onclick="deleteRide(${actualIndex})">Delete</button>
+                        </div>
+                        <div class="log-item-date">${new Date(ride.date).toLocaleString()}</div>
+                        <div>Duration: ${hours}h ${minutes}m</div>
+                        ${ride.notes ? `<div style="margin-top: 5px; font-size: 13px;">${ride.notes}</div>` : ''}
+                        ${ride.media && ride.media.length > 0 ? createMediaGallery(ride.media) : ''}
+                        <div class="share-buttons">
+                            <button class="share-btn share-btn-telegram" onclick='shareRide(${actualIndex}, "telegram")'>
+                                📱 Share on Telegram
+                            </button>
+                            <button class="share-btn share-btn-general" onclick='shareRide(${actualIndex}, "general")'>
+                                🔗 Share
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function deleteRide(index) {
+            if (confirm('Delete this ride log?')) {
+                const rides = JSON.parse(localStorage.getItem('rides') || '[]');
+                rides.splice(index, 1);
+                localStorage.setItem('rides', JSON.stringify(rides));
+                loadData();
+            }
+        }
+
+        // Maintenance
+        function saveMaintenance() {
+            const type = document.getElementById('maintenanceType').value;
+            const odometer = document.getElementById('maintenanceOdo').value;
+            const notes = document.getElementById('maintenanceNotes').value;
+
+            const maintenance = {
+                date: new Date().toISOString(),
+                maintenanceType: type,
+                odometer: odometer,
+                notes: notes,
+                media: currentMaintenanceMedia
+            };
+
+            const logs = JSON.parse(localStorage.getItem('maintenance') || '[]');
+            logs.push(maintenance);
+            
+            try {
+                localStorage.setItem('maintenance', JSON.stringify(logs));
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    tg.showAlert('Storage limit exceeded. Try removing some old photos/videos.');
+                    return;
+                }
+            }
+
+            // Reset form
+            document.getElementById('maintenanceOdo').value = '';
+            document.getElementById('maintenanceNotes').value = '';
+            document.getElementById('maintenanceMedia').value = '';
+            currentMaintenanceMedia = [];
+            document.getElementById('maintenanceMediaPreview').innerHTML = '';
+
+            loadData();
+            tg.showAlert('Maintenance logged! 🔧');
+        }
+
+        function displayMaintenanceHistory(logs) {
+            const container = document.getElementById('maintenanceHistory');
+            if (logs.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center;">No maintenance logs yet</p>';
+                return;
+            }
+
+            container.innerHTML = logs.slice().reverse().map((log, index) => {
+                const actualIndex = logs.length - 1 - index;
+                return `
+                    <div class="log-item">
+                        <div class="log-item-header">
+                            <strong>🔧 ${log.maintenanceType}</strong>
+                            <button class="delete-btn" onclick="deleteMaintenance(${actualIndex})">Delete</button>
+                        </div>
+                        <div class="log-item-date">${new Date(log.date).toLocaleString()}</div>
+                        ${log.odometer ? `<div>Odometer: ${log.odometer} km</div>` : ''}
+                        ${log.notes ? `<div style="margin-top: 5px; font-size: 13px;">${log.notes}</div>` : ''}
+                        ${log.media && log.media.length > 0 ? createMediaGallery(log.media) : ''}
+                        <div class="share-buttons">
+                            <button class="share-btn share-btn-telegram" onclick='shareMaintenance(${actualIndex}, "telegram")'>
+                                📱 Share on Telegram
+                            </button>
+                            <button class="share-btn share-btn-general" onclick='shareMaintenance(${actualIndex}, "general")'>
+                                🔗 Share
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function deleteMaintenance(index) {
+            if (confirm('Delete this maintenance log?')) {
+                const logs = JSON.parse(localStorage.getItem('maintenance') || '[]');
+                logs.splice(index, 1);
+                localStorage.setItem('maintenance', JSON.stringify(logs));
+                loadData();
+            }
+        }
+
+        // Emergency contacts
+        function saveEmergencyContact() {
+            const name = document.getElementById('emergencyName').value;
+            const phone = document.getElementById('emergencyPhone').value;
+
+            if (!name || !phone) {
+                tg.showAlert('Please enter both name and phone number');
+                return;
+            }
+
+            const contact = { name, phone };
+            const contacts = JSON.parse(localStorage.getItem('emergencyContacts') || '[]');
+            contacts.push(contact);
+            localStorage.setItem('emergencyContacts', JSON.stringify(contacts));
+
+            document.getElementById('emergencyName').value = '';
+            document.getElementById('emergencyPhone').value = '';
+
+            loadData();
+            tg.showAlert('Emergency contact saved! 🚨');
+        }
+
+        function displayEmergencyContacts(contacts) {
+            const container = document.getElementById('emergencyContacts');
+            if (contacts.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center;">No emergency contacts saved</p>';
+                return;
+            }
+
+            container.innerHTML = contacts.map((contact, index) => `
+                <div class="log-item">
+                    <div class="log-item-header">
+                        <strong>👤 ${contact.name}</strong>
+                        <button class="delete-btn" onclick="deleteContact(${index})">Delete</button>
+                    </div>
+                    <div>📞 ${contact.phone}</div>
+                </div>
+            `).join('');
+        }
+
+        function deleteContact(index) {
+            if (confirm('Delete this contact?')) {
+                const contacts = JSON.parse(localStorage.getItem('emergencyContacts') || '[]');
+                contacts.splice(index, 1);
+                localStorage.setItem('emergencyContacts', JSON.stringify(contacts));
+                loadData();
+            }
+        }
+
+        // Weather check
+        async function checkWeather() {
+            const city = document.getElementById('weatherCity').value;
+            if (!city) {
+                tg.showAlert('Please enter a city name');
+                return;
+            }
+
+            const resultDiv = document.getElementById('weatherResult');
+            resultDiv.innerHTML = '<p style="text-align: center;">Checking weather...</p>';
+
+            try {
+                // Using wttr.in for simple weather check (no API key required)
+                const response = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
+                const data = await response.json();
+
+                const current = data.current_condition[0];
+                resultDiv.innerHTML = `
+                    <div class="weather-info">
+                        <div style="font-size: 20px; margin-bottom: 10px;">${data.nearest_area[0].areaName[0].value}</div>
+                        <div class="weather-temp">${current.temp_C}°C</div>
+                        <div style="font-size: 18px; margin-bottom: 10px;">${current.weatherDesc[0].value}</div>
+                        <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.8;">Wind</div>
+                                <div style="font-weight: bold;">${current.windspeedKmph} km/h</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.8;">Humidity</div>
+                                <div style="font-weight: bold;">${current.humidity}%</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; opacity: 0.8;">Visibility</div>
+                                <div style="font-weight: bold;">${current.visibility} km</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 8px;">
+                            ${getRidingCondition(current)}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = '<p style="color: red; text-align: center;">Could not fetch weather. Please try again.</p>';
+            }
+        }
+
+        function getRidingCondition(weather) {
+            const temp = parseInt(weather.temp_C);
+            const windSpeed = parseInt(weather.windspeedKmph);
+            const desc = weather.weatherDesc[0].value.toLowerCase();
+
+            if (desc.includes('rain') || desc.includes('snow')) {
+                return '⚠️ Poor riding conditions - Rain/Snow detected';
+            } else if (windSpeed > 40) {
+                return '⚠️ High winds - Ride with caution';
+            } else if (temp < 5) {
+                return '❄️ Cold - Dress warmly, watch for ice';
+            } else if (temp > 35) {
+                return '☀️ Hot - Stay hydrated, take breaks';
+            } else if (windSpeed > 25) {
+                return '🌬️ Moderate winds - Grip tank firmly';
+            } else {
+                return '✅ Good riding conditions!';
+            }
+        }
+
+        // Initialize app
+        loadData();
+        updateTimerDisplay();
+
+        // Send ready signal to Telegram
+        tg.ready();
+
+        // === SHARING FUNCTIONS ===
+
+        let currentShareData = null;
+
+        function shareRide(index, platform) {
+            const rides = JSON.parse(localStorage.getItem('rides') || '[]');
+            const ride = rides[index];
+            
+            if (!ride) return;
+
+            const hours = Math.floor(ride.duration / 3600);
+            const minutes = Math.floor((ride.duration % 3600) / 60);
+            const date = new Date(ride.date).toLocaleDateString();
+            
+            const text = `🏍️ Ride Log - ${date}
+
+📍 Distance: ${ride.distance} km
+⏱️ Duration: ${hours}h ${minutes}m
+${ride.notes ? `\n📝 Notes: ${ride.notes}` : ''}
+
+#BikerLife #Motorcycle #RideLog`;
+
+            currentShareData = {
+                text: text,
+                type: 'ride',
+                media: ride.media || []
+            };
+
+            if (platform === 'telegram') {
+                shareToTelegram(text);
+            } else {
+                openShareModal(text);
+            }
+        }
+
+        function shareMaintenance(index, platform) {
+            const logs = JSON.parse(localStorage.getItem('maintenance') || '[]');
+            const log = logs[index];
+            
+            if (!log) return;
+
+            const date = new Date(log.date).toLocaleDateString();
+            
+            const text = `🔧 Maintenance Log - ${date}
+
+🛠️ Type: ${log.maintenanceType}
+${log.odometer ? `📊 Odometer: ${log.odometer} km` : ''}
+${log.notes ? `\n📝 Notes: ${log.notes}` : ''}
+
+#BikerMaintenance #Motorcycle`;
+
+            currentShareData = {
+                text: text,
+                type: 'maintenance',
+                media: log.media || []
+            };
+
+            if (platform === 'telegram') {
+                shareToTelegram(text);
+            } else {
+                openShareModal(text);
+            }
+        }
+
+        function shareStats() {
+            const rides = JSON.parse(localStorage.getItem('rides') || '[]');
+            const maintenance = JSON.parse(localStorage.getItem('maintenance') || '[]');
+            
+            const totalRides = rides.length;
+            const totalDistance = rides.reduce((sum, r) => sum + parseFloat(r.distance || 0), 0).toFixed(1);
+            const totalTime = (rides.reduce((sum, r) => sum + parseInt(r.duration || 0), 0) / 3600).toFixed(1);
+            const maintenanceCount = maintenance.length;
+
+            const text = `🏍️ My Biker Stats
+
+📊 Total Rides: ${totalRides}
+📍 Distance Traveled: ${totalDistance} km
+⏱️ Time Riding: ${totalTime} hours
+🔧 Maintenance Logs: ${maintenanceCount}
+
+Keep riding! 🏍️💨
+
+#BikerStats #Motorcycle #RideLife`;
+
+            currentShareData = {
+                text: text,
+                type: 'stats',
+                media: []
+            };
+
+            openShareModal(text);
+        }
+
+        function openShareModal(text) {
+            const modal = document.getElementById('shareModal');
+            const preview = document.getElementById('sharePreview');
+            const options = document.getElementById('shareOptions');
+
+            preview.innerHTML = `<pre>${text}</pre>`;
+
+            // Check if Web Share API is available
+            const hasWebShare = navigator.share !== undefined;
+
+            options.innerHTML = `
+                ${hasWebShare ? `
+                <div class="share-option" onclick="shareViaWebShare()">
+                    <div class="share-option-icon share-option-native">📱</div>
+                    <div class="share-option-text">
+                        <strong>Share</strong>
+                        <small>Use your device's share menu</small>
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="share-option" onclick="shareToTelegram()">
+                    <div class="share-option-icon share-option-telegram">📱</div>
+                    <div class="share-option-text">
+                        <strong>Telegram</strong>
+                        <small>Share to a Telegram chat</small>
+                    </div>
+                </div>
+
+                <div class="share-option" onclick="shareToWhatsApp()">
+                    <div class="share-option-icon share-option-whatsapp">💬</div>
+                    <div class="share-option-text">
+                        <strong>WhatsApp</strong>
+                        <small>Share via WhatsApp</small>
+                    </div>
+                </div>
+
+                <div class="share-option" onclick="shareToTwitter()">
+                    <div class="share-option-icon share-option-twitter">🐦</div>
+                    <div class="share-option-text">
+                        <strong>Twitter/X</strong>
+                        <small>Post to Twitter</small>
+                    </div>
+                </div>
+
+                <div class="share-option" onclick="shareToFacebook()">
+                    <div class="share-option-icon share-option-facebook">📘</div>
+                    <div class="share-option-text">
+                        <strong>Facebook</strong>
+                        <small>Share on Facebook</small>
+                    </div>
+                </div>
+
+                <div class="share-option" onclick="copyToClipboard()">
+                    <div class="share-option-icon share-option-copy">📋</div>
+                    <div class="share-option-text">
+                        <strong>Copy Text</strong>
+                        <small>Copy to clipboard</small>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closeShareModal() {
+            const modal = document.getElementById('shareModal');
+            modal.classList.remove('active');
+            currentShareData = null;
+        }
+
+        // Platform-specific sharing functions
+
+        async function shareViaWebShare() {
+            if (!navigator.share) {
+                tg.showAlert('Web Share API not available on this device');
+                return;
+            }
+
+            try {
+                const shareData = {
+                    title: 'Biker\'s Companion',
+                    text: currentShareData.text
+                };
+
+                await navigator.share(shareData);
+                closeShareModal();
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Share failed:', error);
+                    tg.showAlert('Failed to share');
+                }
+            }
+        }
+
+        function shareToTelegram(text = null) {
+            const shareText = text || currentShareData.text;
+            const url = `https://t.me/share/url?text=${encodeURIComponent(shareText)}`;
+            
+            // Try to use Telegram WebApp API first
+            if (tg && tg.openTelegramLink) {
+                tg.openTelegramLink(url);
+            } else {
+                window.open(url, '_blank');
+            }
+            
+            if (!text) closeShareModal();
+        }
+
+        function shareToWhatsApp() {
+            const url = `https://wa.me/?text=${encodeURIComponent(currentShareData.text)}`;
+            window.open(url, '_blank');
+            closeShareModal();
+        }
+
+        function shareToTwitter() {
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(currentShareData.text)}`;
+            window.open(url, '_blank');
+            closeShareModal();
+        }
+
+        function shareToFacebook() {
+            const url = `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(currentShareData.text)}`;
+            window.open(url, '_blank');
+            closeShareModal();
+        }
+
+        async function copyToClipboard() {
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(currentShareData.text);
+                    tg.showAlert('Copied to clipboard! 📋');
+                } else {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = currentShareData.text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    
+                    try {
+                        document.execCommand('copy');
+                        tg.showAlert('Copied to clipboard! 📋');
+                    } catch (err) {
+                        tg.showAlert('Failed to copy to clipboard');
+                    }
+                    
+                    document.body.removeChild(textArea);
+                }
+                closeShareModal();
+            } catch (error) {
+                console.error('Copy failed:', error);
+                tg.showAlert('Failed to copy to clipboard');
+            }
+        }
+    </script>
+</body>
+</html>
